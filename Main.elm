@@ -7,9 +7,6 @@ import Signal exposing (foldp)
 import Time exposing (fps, Time)
 import Random as R
 
-speedOfBoulders : Float
-speedOfBoulders = 2
-
 main : Signal Element
 main = Signal.map view (foldp update init updates)
 
@@ -17,6 +14,7 @@ type alias State =
   { carx : Float 
   , moving : Float
   , boulders : List (Float, Float)
+  , bouldersp : Float
   }
 
 init : State
@@ -24,6 +22,7 @@ init =
   { moving = 0.0
   , carx = 0.0
   , boulders = []
+  , bouldersp = 2
   }
 
 update : Update -> State -> State
@@ -33,8 +32,13 @@ update up st =
     TimeDelta t -> 
       let c = st.carx
           b = st.boulders 
+          bbs = updateboulders t st.bouldersp b
+          speed = if snd bbs > 14 
+                    then 1 
+                    else snd bbs
       in { st | carx = updateX c st.moving 
-              , boulders = updateboulders t b} 
+              , boulders = fst bbs
+              , bouldersp = speed} 
     
 
 updateX : Float -> Float -> Float
@@ -46,8 +50,8 @@ updateX x d =
                  then 378.0 
                  else x'
 
-updateboulders : Time -> List (Float, Float) -> List (Float, Float)
-updateboulders t b = 
+updateboulders : Time -> Float -> List (Float, Float) -> (List (Float, Float), Float)
+updateboulders t sp b = 
   case b of
     [] ->
       let s = R.initialSeed (floor (Time.inMilliseconds t))
@@ -58,13 +62,13 @@ updateboulders t b =
                 let (x, se') = R.generate (R.int -378 378) se
                 in  (toFloat x, snd b) :: makeX se' bbs
               [] -> [] 
-      in makeX s' (List.repeat number_of_boulders (0,270))
+      in (makeX s' (List.repeat number_of_boulders (0,270)), sp + 1)
     bs -> 
       let moveDown b = 
             if snd b < -270
               then Nothing 
-              else Just (fst b, snd b - speedOfBoulders)
-      in List.filterMap moveDown bs
+              else Just (fst b, snd b - sp)
+      in (List.filterMap moveDown bs, sp)
 
 type Update = TimeDelta Float | SideArrow Int
 
