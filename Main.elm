@@ -18,6 +18,7 @@ type alias State =
   , bouldersp : Float
   , score : Float
   , lastSeen : Float
+  , pause : Bool
   }
 
 init : State
@@ -27,18 +28,23 @@ init =
   , boulders = []
   , bouldersp = 2
   , score = 0.0
-  , lastSeen = 0.0 
+  , lastSeen = 0.0
+  , pause = True 
   }
 
 update : Update -> State -> State
 update up st =
   case up of
-    SideArrow i -> {st | moving = toFloat i } 
+    TogglePlay -> let p = st.pause in {st | pause = not p}
+    SideArrow i -> if st.pause then st else {st | moving = toFloat i } 
     TimeDelta t -> 
-      let c = st.carx
-          stateo = updateboulders t st
-          stsc = updateScore stateo
-      in { stsc | carx = updateX c st.moving } 
+      if st.pause 
+        then st 
+        else
+          let c = st.carx
+              stateo = updateboulders t st
+              stsc = updateScore stateo
+          in { stsc | carx = updateX c st.moving } 
     
 
 updateX : Float -> Float -> Float
@@ -86,15 +92,16 @@ updateboulders t st =
               ,bouldersp = ns }
 
 
-type Update = TimeDelta Float | SideArrow Int
+type Update = TimeDelta Float | SideArrow Int | TogglePlay 
 
 sideArrow : Signal Int
 sideArrow = Signal.map (.x) (Signal.merge arrows wasd)
 
 updates : Signal Update
-updates = Signal.merge 
-              (Signal.map SideArrow sideArrow)
-              (Signal.map TimeDelta (fps 100))
+updates = Signal.mergeMany 
+              [ (Signal.map SideArrow sideArrow)
+              , (Signal.map TimeDelta (fps 100))
+              , (Signal.map (always TogglePlay) (Signal.filter identity False Keyboard.space)) ]
 
 ---------------------------------------------------------
 -- View
@@ -113,7 +120,7 @@ scorestr st =
 
 instructions : Element
 instructions = 
-  let inst = fromString "a - d or <- - -> to move and p to pause"
+  let inst = fromString "a - d or <- - -> to move and space to pause"
             |> Text.color blue
             |> Text.height 15
             |> Text.bold
