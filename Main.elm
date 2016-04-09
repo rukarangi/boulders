@@ -6,6 +6,7 @@ import Keyboard exposing (arrows, keysDown, wasd)
 import Signal exposing (foldp)
 import Time exposing (fps, Time)
 import Random as R
+import Basics exposing (toString)
 
 main : Signal Element
 main = Signal.map view (foldp update init updates)
@@ -15,6 +16,8 @@ type alias State =
   , moving : Float
   , boulders : List (Float, Float)
   , bouldersp : Float
+  , score : Float
+  , lastSeen : Float
   }
 
 init : State
@@ -23,6 +26,8 @@ init =
   , carx = 0.0
   , boulders = []
   , bouldersp = 2
+  , score = 0.0
+  , lastSeen = 0.0 
   }
 
 update : Update -> State -> State
@@ -31,14 +36,9 @@ update up st =
     SideArrow i -> {st | moving = toFloat i } 
     TimeDelta t -> 
       let c = st.carx
-          b = st.boulders 
-          bbs = updateboulders t st.bouldersp b
-          speed = if snd bbs > 14 
-                    then 1 
-                    else snd bbs
-      in { st | carx = updateX c st.moving 
-              , boulders = fst bbs
-              , bouldersp = speed} 
+          stateo = updateboulders t st
+          stsc = updateScore stateo
+      in { stsc | carx = updateX c st.moving } 
     
 
 updateX : Float -> Float -> Float
@@ -50,9 +50,20 @@ updateX x d =
                  then 378.0 
                  else x'
 
-updateboulders : Time -> Float -> List (Float, Float) -> (List (Float, Float), Float)
-updateboulders t sp b = 
-  case b of
+updateScore : State -> State
+updateScore st = 
+      let sc = st.score
+          ls = st.lastSeen
+          inc = if by > ls then 1 else 0
+          by = case st.boulders of
+                [] -> st.lastSeen
+                ( b :: _ ) -> snd b
+      in { st | score = sc + inc
+              ,lastSeen = by } 
+
+updateboulders : Time -> State -> State
+updateboulders t st =
+  case st.boulders of
     [] ->
       let s = R.initialSeed (floor (Time.inMilliseconds t))
           (number_of_boulders, s') = R.generate (R.int 2 4) s
@@ -61,14 +72,19 @@ updateboulders t sp b =
               b::bbs ->  
                 let (x, se') = R.generate (R.int -378 378) se
                 in  (toFloat x, snd b) :: makeX se' bbs
-              [] -> [] 
-      in (makeX s' (List.repeat number_of_boulders (0,270)), sp + 1)
+              [] -> []
+          sp = st.bouldersp
+      in { st | boulders = makeX s' (List.repeat number_of_boulders (0,270))
+              , bouldersp = sp + 1 }
     bs -> 
       let moveDown b = 
             if snd b < -270
               then Nothing 
-              else Just (fst b, snd b - sp)
-      in (List.filterMap moveDown bs, sp)
+              else Just (fst b, snd b - st.bouldersp)
+          ns = if st.bouldersp > 10 then 1 else st.bouldersp
+      in { st | boulders = List.filterMap moveDown bs
+              ,bouldersp = ns }
+
 
 type Update = TimeDelta Float | SideArrow Int
 
@@ -85,8 +101,23 @@ updates = Signal.merge
 ---------------------------------------------------------
 
 view : State -> Element
-view st = header `above` (board st)
+view st = header `above` (scorestr  st) `above` instructions `above` (board st)
 
+scorestr : State -> Element
+scorestr st = 
+  let scr = fromString (toString st.score)
+            |> Text.color yellow
+            |> Text.height 15
+            |> Text.bold
+  in container 1200 50 middle (centered scr)
+
+instructions : Element
+instructions = 
+  let inst = fromString "a - d or <- - -> to move and p to pause"
+            |> Text.color blue
+            |> Text.height 15
+            |> Text.bold
+  in container 1200 15 middle (centered inst)
 
 header : Element
 header = 
@@ -95,7 +126,7 @@ header =
             |> Text.height 40
             |> Text.bold
             |> Text.italic
-  in container 1200 100 middle (centered h)
+  in container 1200 50 middle (centered h)
 
 -------------------------------------------------------
 -- Board
@@ -109,6 +140,9 @@ board st =
           [ rect 800 500 |> filled clearGrey
           , car |> move (st.carx, -200)
           ] `List.append` bs 
+
+ss : State -> String
+ss st = toString st.score
 
 --------------------------------
 -- Car 
