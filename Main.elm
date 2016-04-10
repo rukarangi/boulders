@@ -126,6 +126,14 @@ instructions st =
             |> Text.bold
   in container 1200 15 middle (centered inst)
 
+pauseText : State -> Text
+pauseText st = 
+    fromString (if st.pause then "PRESS SPACE TO START" else "")
+            |> Text.color black
+            |> Text.bold
+            |> Text.height 45
+
+
 header : Element
 header = 
   let  h = fromString "Luke's Boulder Game"
@@ -147,6 +155,7 @@ board st =
           [ rect 800 500 |> filled clearGrey
           , car |> move (st.carx, -200)
           ] `List.append` bs 
+          `List.append` [toForm (centered (pauseText st))]
 
 ss : State -> String
 ss st = toString st.score
