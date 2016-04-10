@@ -35,7 +35,7 @@ init =
 update : Update -> State -> State
 update up st =
   case up of
-    TogglePlay -> let p = st.pause in {st | pause = not p}
+    TogglePlay -> let p = st.pause in {st | pause = not p, moving = 0.0}
     SideArrow i -> if st.pause then st else {st | moving = toFloat i } 
     TimeDelta t -> 
       if st.pause 
@@ -108,7 +108,7 @@ updates = Signal.mergeMany
 ---------------------------------------------------------
 
 view : State -> Element
-view st = header `above` (scorestr  st) `above` instructions `above` (board st)
+view st = header `above` (scorestr  st) `above` (instructions st) `above` (board st)
 
 scorestr : State -> Element
 scorestr st = 
@@ -118,9 +118,9 @@ scorestr st =
             |> Text.bold
   in container 1200 50 middle (centered scr)
 
-instructions : Element
-instructions = 
-  let inst = fromString "a - d or <- - -> to move and space to pause"
+instructions : State -> Element
+instructions st = 
+  let inst = fromString ("a - d or <- - -> to move and space to " ++ (if st.pause then "play" else "pause"))
             |> Text.color blue
             |> Text.height 15
             |> Text.bold
