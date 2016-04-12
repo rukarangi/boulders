@@ -19,6 +19,7 @@ type alias State =
   , score : Float
   , lastSeen : Float
   , pause : Bool
+  , ingame : Bool
   }
 
 init : State
@@ -30,6 +31,7 @@ init =
   , score = 0.0
   , lastSeen = 0.0
   , pause = True 
+  , ingame = False
   }
 
 update : Update -> State -> State
@@ -44,7 +46,8 @@ update up st =
           let c = st.carx
               stateo = updateboulders t st
               stsc = updateScore stateo
-          in { stsc | carx = updateX c st.moving } 
+              isc = updateCollision stsc
+          in { isc | carx = updateX c st.moving } 
     
 
 updateX : Float -> Float -> Float
@@ -65,7 +68,23 @@ updateScore st =
                 [] -> st.lastSeen
                 ( b :: _ ) -> snd b
       in { st | score = sc + inc
-              ,lastSeen = by } 
+              , lastSeen = by } 
+
+updateCollision : State -> State
+updateCollision st = 
+  if isCollision st 
+    then { st | ingame = False, pause = True}
+    else st
+
+isCollision : State -> Bool
+isCollision st = 
+  let carhit b = 
+          let bty = (snd b + 50)
+              bby = (snd b - 50)
+              bxl = (fst b - 40)
+              bxr = (fst b + 40)
+          in bty > -200 && bby < -200 && bxl < st.carx && bxr > st.carx
+  in List.any carhit st.boulders
 
 updateboulders : Time -> State -> State
 updateboulders t st =
@@ -165,10 +184,10 @@ ss st = toString st.score
 --------------------------------
 
 car : Form
-car = toForm <| image 50 75 "sprites/car_number_one.png"
+car = toForm <| image 50 75 "sprites/car_number_one_done.png"
 
 boulderone : Form
-boulderone = toForm <| image 100 100 "sprites/boulder_one.png"
+boulderone = toForm <| image 100 100 "sprites/rock_one_done.png"
 
 rockone : Form
 rockone = toForm <| image 100 100 "sprites/rock_one.png"
