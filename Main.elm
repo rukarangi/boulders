@@ -52,7 +52,7 @@ update up st =
 
 updateX : Float -> Float -> Float
 updateX x d = 
-    let x' = x + d * 3
+    let x' = x + d * 9
     in  if x' > 378.0
           then -378.0
           else if x' < -378.0
@@ -100,7 +100,7 @@ updateboulders t st =
               [] -> []
           sp = st.bouldersp
       in { st | boulders = makeX s' (List.repeat number_of_boulders (0,270))
-              , bouldersp = sp + 1 }
+              , bouldersp = sp + 2 }
     bs -> 
       let moveDown b = 
             if snd b < -270
@@ -119,7 +119,7 @@ sideArrow = Signal.map (.x) (Signal.merge arrows wasd)
 updates : Signal Update
 updates = Signal.mergeMany 
               [ (Signal.map SideArrow sideArrow)
-              , (Signal.map TimeDelta (fps 100))
+              , (Signal.map TimeDelta (fps 40))
               , (Signal.map (always TogglePlay) (Signal.filter identity False Keyboard.space)) ]
 
 ---------------------------------------------------------
@@ -184,10 +184,10 @@ ss st = toString st.score
 --------------------------------
 
 car : Form
-car = toForm <| image 50 75 "sprites/car_number_one_done.png"
+car = toForm <| image 50 75 "sprites/car_number_one.png"
 
 boulderone : Form
-boulderone = toForm <| image 100 100 "sprites/rock_one_done.png"
+boulderone = toForm <| image 100 100 "sprites/rock_one.png"
 
 rockone : Form
 rockone = toForm <| image 100 100 "sprites/rock_one.png"
