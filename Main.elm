@@ -37,7 +37,7 @@ init =
 update : Update -> State -> State
 update up st =
   case up of
-    TogglePlay -> let p = st.pause in {st | pause = not p, moving = 0.0}
+    TogglePlay -> updatePlay st
     SideArrow i -> if st.pause then st else {st | moving = toFloat i } 
     TimeDelta t -> 
       if st.pause 
@@ -49,6 +49,14 @@ update up st =
               isc = updateCollision stsc
           in { isc | carx = updateX c st.moving } 
     
+
+updatePlay : State -> State
+updatePlay st =
+    case ( st.pause, st.ingame ) of
+      (True, True) -> { st | pause = False}
+      (False, True) -> { st | pause = True, moving = 0.0}
+      (True, False) -> { init | pause = False, ingame = True}
+      (False, False) -> { init | pause = False, ingame = True}
 
 updateX : Float -> Float -> Float
 updateX x d = 
