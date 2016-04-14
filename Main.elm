@@ -142,23 +142,26 @@ updates = Signal.mergeMany
 ---------------------------------------------------------
 
 view : State -> Element
-view st = header `above` (hscorestr st) `above` (scorestr  st) `above` (instructions st) `above` (board st)
+view st = header 
+      `above` ((scorestr st) `beside` (hscorestr  st) )
+      `above` (instructions st) 
+      `above` (board st)
 
 hscorestr : State -> Element
 hscorestr st = 
-  let scr = fromString (toString st.hScore)
+  let scr = fromString ("High score: " ++ toString st.hScore)
             |> Text.color purple
             |> Text.height 15
             |> Text.bold
-  in container 1200 50 middle (centered scr)
+  in container 600 50 middle (rightAligned scr)
 
 scorestr : State -> Element
 scorestr st = 
-  let scr = fromString (toString st.score)
+  let scr = fromString ("Score: " ++ toString st.score)
             |> Text.color yellow
             |> Text.height 15
             |> Text.bold
-  in container 1200 50 middle (centered scr)
+  in container 600 50 middle (leftAligned scr)
 
 instructions : State -> Element
 instructions st = 
