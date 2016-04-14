@@ -20,6 +20,7 @@ type alias State =
   , lastSeen : Float
   , pause : Bool
   , ingame : Bool
+  , hScore : Float
   }
 
 init : State
@@ -32,6 +33,7 @@ init =
   , lastSeen = 0.0
   , pause = True 
   , ingame = False
+  , hScore = 0.0
   }
 
 update : Update -> State -> State
@@ -55,7 +57,12 @@ updatePlay st =
     case ( st.pause, st.ingame ) of
       (True, True) -> { st | pause = False}
       (False, True) -> { st | pause = True, moving = 0.0}
-      (True, False) -> { init | pause = False, ingame = True}
+      (True, False) -> { init | pause = False
+                              , ingame = True
+                              , hScore = (if st.score > st.hScore then 
+                                            st.score else 
+                                            st.hScore)}
+
       (False, False) -> { init | pause = False, ingame = True}
 
 updateX : Float -> Float -> Float
@@ -114,7 +121,7 @@ updateboulders t st =
             if snd b < -270
               then Nothing 
               else Just (fst b, snd b - st.bouldersp)
-          ns = if st.bouldersp > 10 then 2 else st.bouldersp
+          ns = if st.bouldersp > 15 then 2 else st.bouldersp
       in { st | boulders = List.filterMap moveDown bs
               ,bouldersp = ns }
 
@@ -135,7 +142,15 @@ updates = Signal.mergeMany
 ---------------------------------------------------------
 
 view : State -> Element
-view st = header `above` (scorestr  st) `above` (instructions st) `above` (board st)
+view st = header `above` (hscorestr st) `above` (scorestr  st) `above` (instructions st) `above` (board st)
+
+hscorestr : State -> Element
+hscorestr st = 
+  let scr = fromString (toString st.hScore)
+            |> Text.color purple
+            |> Text.height 15
+            |> Text.bold
+  in container 1200 50 middle (centered scr)
 
 scorestr : State -> Element
 scorestr st = 
