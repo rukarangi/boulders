@@ -110,8 +110,7 @@ updateboulders : Time -> State -> State
 updateboulders t st =
   case st.boulders of
     [] ->
-      let l = Debug.log "time as date" (toString (fromTime t))
-          mb = st.max_boulders + (if st.bouldersp > max_speed then 1 else 0)
+      let mb = st.max_boulders + (if st.bouldersp > max_speed then 1 else 0)
           s = R.initialSeed (floor t)
           (number_of_boulders, s') = R.generate (R.int 2 mb) s
           makeX se bs = 
@@ -132,7 +131,7 @@ updateboulders t st =
       in { st | boulders = List.filterMap moveDown bs }
 
 
-type Update = TimeDelta Float | SideArrow Int | TogglePlay 
+type Update = TimeDelta Time | SideArrow Int | TogglePlay 
 
 sideArrow : Signal Int
 sideArrow = Signal.map (.x) (Signal.merge arrows wasd)
@@ -140,7 +139,7 @@ sideArrow = Signal.map (.x) (Signal.merge arrows wasd)
 updates : Signal Update
 updates = Signal.mergeMany 
               [ (Signal.map SideArrow sideArrow)
-              , (Signal.map TimeDelta (fps 40))
+              , (Signal.map (fst >> TimeDelta) (Time.timestamp (fps 40)))
               , (Signal.map (always TogglePlay) (Signal.filter identity False Keyboard.space)) ]
 
 ---------------------------------------------------------
