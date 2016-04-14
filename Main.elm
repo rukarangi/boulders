@@ -155,7 +155,13 @@ instructions st =
 
 pauseText : State -> Text
 pauseText st = 
-    fromString (if st.pause then "PRESS SPACE TO START" else "")
+  let message =
+      if st.pause
+         then if st.ingame || st.score == 0.0
+                 then "PRESS SPACE TO START"
+                 else "GAME OVER!\nPRESS SPACE TO START"
+         else ""
+  in fromString message
             |> Text.color black
             |> Text.bold
             |> Text.height 45
