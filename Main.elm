@@ -5,11 +5,14 @@ import Graphics.Element exposing (..)
 import Keyboard exposing (arrows, keysDown, wasd)
 import Signal exposing (foldp)
 import Time exposing (fps, Time)
+import Date exposing (fromTime)
 import Random as R
 import Basics exposing (toString)
 
 main : Signal Element
 main = Signal.map view (foldp update init updates)
+
+max_speed = 15
 
 type alias State = 
   { carx : Float 
@@ -21,6 +24,7 @@ type alias State =
   , pause : Bool
   , ingame : Bool
   , hScore : Float
+  , max_boulders : Int
   }
 
 init : State
@@ -34,6 +38,7 @@ init =
   , pause = True 
   , ingame = False
   , hScore = 0.0
+  , max_boulders = 2
   }
 
 update : Update -> State -> State
@@ -105,25 +110,26 @@ updateboulders : Time -> State -> State
 updateboulders t st =
   case st.boulders of
     [] ->
-      let s = R.initialSeed (floor (Time.inMilliseconds t))
-          (number_of_boulders, s') = R.generate (R.int 2 4) s
+      let l = Debug.log "time as date" (toString (fromTime t))
+          mb = st.max_boulders + (if st.bouldersp > max_speed then 1 else 0)
+          s = R.initialSeed (floor t)
+          (number_of_boulders, s') = R.generate (R.int 2 mb) s
           makeX se bs = 
             case bs of
               b::bbs ->  
                 let (x, se') = R.generate (R.int -378 378) se
                 in  (toFloat x, snd b) :: makeX se' bbs
               [] -> []
-          sp = st.bouldersp
+          sp = if st.bouldersp > max_speed then 4 else st.bouldersp + 2
       in { st | boulders = makeX s' (List.repeat number_of_boulders (0,270))
-              , bouldersp = sp + 2 }
+              , bouldersp = sp 
+              , max_boulders = mb }
     bs -> 
       let moveDown b = 
             if snd b < -270
               then Nothing 
               else Just (fst b, snd b - st.bouldersp)
-          ns = if st.bouldersp > 15 then 2 else st.bouldersp
-      in { st | boulders = List.filterMap moveDown bs
-              ,bouldersp = ns }
+      in { st | boulders = List.filterMap moveDown bs }
 
 
 type Update = TimeDelta Float | SideArrow Int | TogglePlay 
