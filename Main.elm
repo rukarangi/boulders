@@ -114,7 +114,7 @@ updateboulders t st =
             if snd b < -270
               then Nothing 
               else Just (fst b, snd b - st.bouldersp)
-          ns = if st.bouldersp > 10 then 1 else st.bouldersp
+          ns = if st.bouldersp > 10 then 2 else st.bouldersp
       in { st | boulders = List.filterMap moveDown bs
               ,bouldersp = ns }
 
